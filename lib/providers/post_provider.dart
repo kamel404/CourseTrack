@@ -28,9 +28,11 @@ class PostProvider extends ChangeNotifier {
     await fetchAllPosts(); // Refresh the list after updating
   }
 
-  Future<void> deletePost(int id) async {
-    await _dbHelper.deletePost(id);
-    await fetchAllPosts(); // Refresh the list after deleting
+  Future<void> deletePost(int? id) async {
+    if (id != null) {
+      await _dbHelper.deletePost(id);
+      await fetchAllPosts(); // Refresh the list after deleting
+    }
   }
 
   Future<void> searchPosts(String keyword) async {
