@@ -31,7 +31,7 @@ class DbHelper {
         content TEXT NOT NULL,
         author TEXT NOT NULL,
         date TEXT NOT NULL,
-        imageUrl TEXT
+        imagePath TEXT // Ensure this matches the BlogPost model
       )
     ''');
   }

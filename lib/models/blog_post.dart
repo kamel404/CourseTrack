@@ -1,6 +1,5 @@
-
 class BlogPost {
-  final int id;
+  final int? id; // Make id nullable
   final String title; 
   final String content;
   final String author;
@@ -8,7 +7,7 @@ class BlogPost {
   final String? imagePath;
 
   const BlogPost({
-    required this.id,
+    this.id, // Allow id to be null
     required this.title,
     required this.content,
     required this.author,
@@ -16,25 +15,27 @@ class BlogPost {
     this.imagePath,
   });
 
+  /// This method is used to convert a BlogPost object to a map for DB storage.
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'id': id, // id can be null for new posts
       'title': title,
       'content': content,
       'author': author,
       'date': date.toIso8601String(),
-      'imageUrl': imagePath,
+      'imagePath': imagePath, // Ensure this matches the database column name
     };
   }
 
+  /// This method is used to convert a map (in DB) to a BlogPost object.
   factory BlogPost.fromMap(Map<String, dynamic> map) {
     return BlogPost(
-      id: map['id'],
+      id: map['id'], 
       title: map['title'],
       content: map['content'],
       author: map['author'],
       date: DateTime.parse(map['date']),  
-      imagePath: map['imageUrl'],
+      imagePath: map['imagePath'], // Ensure this matches the database column name
     );
   }
 }
