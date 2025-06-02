@@ -1,108 +1,91 @@
-import 'dart:async';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/blog_post.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-class DbHelper {
-  static final DbHelper _instance = DbHelper._internal();
+// Initialize database for desktop platforms
+void initializeDatabase() {
+  if (!kIsWeb) {
+    // Initialize FFI
+    sqfliteFfiInit();
+    // Set database factory - THIS IS THE CRUCIAL LINE
+    databaseFactory = databaseFactoryFfi;
+  }
+}
+
+class DatabaseHelper {
+  // Use static field initialization to ensure database is initialized first
+  static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
 
-  // Singleton pattern
-  factory DbHelper() => _instance;
-
-  DbHelper._internal();
+  DatabaseHelper._init() {
+    // Ensure database is initialized during construction
+    if (!kIsWeb) {
+      initializeDatabase();
+    }
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
+
+    // Make sure SQLite is initialized before opening database
+    if (!kIsWeb) {
+      initializeDatabase();
+    }
+
+    try {
+      _database = await _initDB('blog.db');
+      return _database!;
+    } catch (e) {
+      print('Error initializing database: $e');
+      rethrow;
+    }
   }
 
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'blog_posts.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  Future _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE blog_posts(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        author TEXT NOT NULL,
-        date TEXT NOT NULL,
-        imagePath TEXT // Ensure this matches the BlogPost model
+      CREATE TABLE posts (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        content TEXT,
+        category TEXT,
+        date TEXT,
+        imageUrl TEXT
       )
     ''');
   }
 
-  // Insert a blog post into the DB
-  Future<void> insertPost(BlogPost post) async {
-    final db = await database;
-    await db.insert(
-      'blog_posts',
-      post.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  Future<int> insertPost(BlogPost post) async {
+    final db = await instance.database;
+    return await db.insert('posts', post.toMap());
   }
 
-  // Retrieve all posts (for Home screen)
-  Future<List<BlogPost>> getAllPosts() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'blog_posts',
+  Future<List<BlogPost>> getPosts() async {
+    final db = await instance.database;
+    final maps = await db.query('posts', orderBy: 'date DESC');
+    return List.generate(maps.length, (i) => BlogPost.fromMap(maps[i]));
+  }
+
+  Future<List<BlogPost>> getPostsByCategory(String category) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'posts',
+      where: 'category = ?',
+      whereArgs: [category],
       orderBy: 'date DESC',
     );
-
-    return List.generate(maps.length, (i) {
-      return BlogPost.fromMap(maps[i]);
-    });
+    return List.generate(maps.length, (i) => BlogPost.fromMap(maps[i]));
   }
 
-  // Retrieve posts by user
-  Future<List<BlogPost>> getMyPosts(String author) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'blog_posts',
-      where: 'author = ?',
-      whereArgs: [author],
-      orderBy: 'date DESC',
-    );
-
-    return List.generate(maps.length, (i) {
-      return BlogPost.fromMap(maps[i]);
-    });
-  }
-
-  // Edit an existing post
-  Future<int> updatePost(BlogPost post) async {
-    final db = await database;
-    return await db.update(
-      'blog_posts',
-      post.toMap(),
-      where: 'id = ?',
-      whereArgs: [post.id],
-    );
-  }
-
-  // Remove post by ID
-  Future<void> deletePost(int id) async {
-    final db = await database;
-    await db.delete('blog_posts', where: 'id = ?', whereArgs: [id]);
-  }
-
-  // Search posts by keywords in title or content
-  Future<List<BlogPost>> searchPosts(String keyword) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'blog_posts',
-      where: 'title LIKE ? OR content LIKE ?',
-      whereArgs: ['%$keyword%', '%$keyword%'],
-      orderBy: 'date DESC',
-    );
-
-    return List.generate(maps.length, (i) {
-      return BlogPost.fromMap(maps[i]);
-    });
+  Future<int> deletePost(String id) async {
+    final db = await instance.database;
+    return await db.delete('posts', where: 'id = ?', whereArgs: [id]);
   }
 }

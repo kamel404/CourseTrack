@@ -1,270 +1,199 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:io';
+import 'package:coursetrack/screens/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'package:coursetrack/models/blog_post.dart';
-import 'package:coursetrack/providers/post_provider.dart';
-import 'package:coursetrack/screens/add_post_screen.dart';
+import '../providers/post_provider.dart';
+import 'add_post_screen.dart';
+import 'post_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
-  final String _username = 'student1'; // Simulated current user
-
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    // Load all posts when screen initializes
-    // Capture the provider before the async gap
-    final postProvider = Provider.of<PostProvider>(context, listen: false);
-    Future.microtask(() {
-      postProvider.fetchAllPosts();
+    WidgetsBinding.instance.addObserver(this);
+    // Refresh posts when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshPosts();
     });
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh posts when the app comes to the foreground
+    if (state == AppLifecycleState.resumed) {
+      _refreshPosts();
+    }
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchController.clear();
-        // Reset to show all posts
-        Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh posts when dependencies change
+    _refreshPosts();
+  }
+
+  void _refreshPosts() {
+    print('Refreshing posts in HomeScreen');
+    final postProvider = Provider.of<PostProvider>(context, listen: false);
+    // Force reload all posts from storage
+    postProvider.loadPosts().then((_) {
+      // Check if posts were loaded successfully
+      print('Posts refreshed in HomeScreen: ${postProvider.posts.length} posts available');
+      // Force UI update if needed
+      if (mounted) {
+        setState(() {});
       }
     });
   }
 
-  void _performSearch(String query) {
-    if (query.trim().isEmpty) {
-      Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
-    } else {
-      Provider.of<PostProvider>(context, listen: false).searchPosts(query);
-    }
-  }
-
-  void _showMyPosts() {
-    Provider.of<PostProvider>(context, listen: false).fetchUserPosts(_username);
-  }
-
-  void _showAllPosts() {
-    Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Search posts...',
-                  border: InputBorder.none,
+    // Use Consumer to listen for changes in the PostProvider
+    return Consumer<PostProvider>(
+      builder: (context, postProvider, child) {
+        // Debug print to verify posts are loaded
+        print('HomeScreen build - Available posts: ${postProvider.posts.length}');
+        
+        return Scaffold(
+          appBar: AppBar(title: Text('Blog Home')),
+          drawer: AppDrawer(),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  'Recent Posts (${postProvider.posts.length})',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                style: const TextStyle(color: Colors.white),
-                autofocus: true,
-                onChanged: _performSearch,
-              )
-            : const Text('University Blog'),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: _toggleSearch,
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'myPosts') {
-                _showMyPosts();
-              } else if (value == 'allPosts') {
-                _showAllPosts();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'myPosts',
-                child: Text('My Posts'),
               ),
-              const PopupMenuItem(
-                value: 'allPosts',
-                child: Text('All Posts'),
-              ),
+              // If there are no posts, show a simple message
+              if (postProvider.posts.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.article_outlined, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('No posts yet', style: TextStyle(fontSize: 18)),
+                        SizedBox(height: 8),
+                        Text('Add your first post with the + button', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                // If we have posts, show them in a scrollable list
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: postProvider.posts.length,
+                    itemBuilder: (context, index) {
+                      final post = postProvider.posts[index];
+                      return Card(
+                        margin: EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Show image if available
+                              if (post.imageUrl.isNotEmpty)
+                                Container(
+                                  height: 120,
+                                  width: double.infinity,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                                    child: kIsWeb
+                                      ? Image.network(post.imageUrl, fit: BoxFit.cover)
+                                      : Image.file(
+                                          File(post.imageUrl),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey.shade200,
+                                              child: Icon(Icons.image_not_supported, color: Colors.grey),
+                                            );
+                                          },
+                                        ),
+                                  ),
+                                ),
+                              
+                              Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            post.title,
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Chip(label: Text(post.category, style: TextStyle(fontSize: 12))),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      post.content.length > 100 
+                                        ? '${post.content.substring(0, 100)}...' 
+                                        : post.content,
+                                      style: TextStyle(color: Colors.grey.shade700),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
             ],
           ),
-        ],
-      ),
-      body: Consumer<PostProvider>(
-        builder: (context, postProvider, child) {
-          final posts = postProvider.posts;
-          
-          if (posts.isEmpty) {
-            return const Center(
-              child: Text(
-                'No posts found. Create your first post!',
-                style: TextStyle(fontSize: 16),
-              ),
-            );
-          }
-          
-          return ListView.builder(
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return _buildPostCard(context, post);
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              // Navigate to add post screen
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AddPostScreen()),
+              );
+              
+              // Force refresh posts when returning from add post screen
+              setState(() {});
+              _refreshPosts();
+              print('Returned from add post screen, refreshing posts');
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddPostScreen(username: _username),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _buildPostCard(BuildContext context, BlogPost post) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Post header
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.author,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${post.date.day}/${post.date.month}/${post.date.year}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (post.author == _username)
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _showDeleteConfirmation(context, post);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Text('Edit'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Text('Delete'),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
+            child: Icon(Icons.add),
           ),
-          
-          // Post title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              post.title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          
-          // Post content
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              post.content,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          
-          // Post image
-          if (post.imagePath != null && post.imagePath!.isNotEmpty) ...[  
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 200,
-              width: double.infinity,
-              child: Image.file(
-                File(post.imagePath!),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-          
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context, BlogPost post) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Post'),
-        content: const Text('Are you sure you want to delete this post?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Provider.of<PostProvider>(context, listen: false)
-                  .deletePost(post.id);
-              Navigator.pop(context);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -1,42 +1,62 @@
-import 'package:coursetrack/data/db_helper.dart';
-import 'package:coursetrack/models/blog_post.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../models/blog_post.dart';
+import '../data/storage_service.dart';
 
-class PostProvider extends ChangeNotifier {
-  final DbHelper _dbHelper = DbHelper();
+class PostProvider with ChangeNotifier {
+  // Use our platform-specific storage service
+  final StorageService _storageService = StorageService();
   List<BlogPost> _posts = [];
+  String _currentCategory = 'All';
 
   List<BlogPost> get posts => _posts;
+  String get currentCategory => _currentCategory;
 
-  Future<void> fetchAllPosts() async {
-    _posts = await _dbHelper.getAllPosts();
-    notifyListeners();
-  }
-
-  Future<void> fetchUserPosts(String author) async {
-    _posts = await _dbHelper.getMyPosts(author);
-    notifyListeners();
-  }
-
-  Future<void> addPost(BlogPost post) async {
-    await _dbHelper.insertPost(post);
-    await fetchAllPosts(); // Refresh the list after adding
-  }
-
-  Future<void> updatePost(BlogPost post) async {
-    await _dbHelper.updatePost(post);
-    await fetchAllPosts(); // Refresh the list after updating
-  }
-
-  Future<void> deletePost(int? id) async {
-    if (id != null) {
-      await _dbHelper.deletePost(id);
-      await fetchAllPosts(); // Refresh the list after deleting
+  Future<void> loadPosts() async {
+    try {
+      _posts = await _storageService.getPosts();
+      print('Loaded ${_posts.length} posts from storage');
+      notifyListeners();
+    } catch (e) {
+      print('Error loading posts: $e');
+      // Make sure we always have a valid list even if there's an error
+      _posts = _posts.isEmpty ? [] : _posts;
+      notifyListeners();
     }
   }
 
-  Future<void> searchPosts(String keyword) async {
-    _posts = await _dbHelper.searchPosts(keyword);
+  Future<void> addPost(BlogPost post) async {
+    try {
+      // First insert the post into storage
+      await _storageService.insertPost(post);
+      
+      // Print debug info
+      print('Added post to storage: ${post.title}');
+      
+      // Reload posts from storage to get a fresh list
+      // This is more reliable than manually adding to the list
+      await loadPosts();
+      
+      print('After adding, total posts: ${_posts.length}');
+    } catch (e) {
+      print('Error in addPost: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deletePost(String id) async {
+    await _storageService.deletePost(id);
+    await loadPosts();
+  }
+
+  Future<void> setCategory(String category) async {
+    _currentCategory = category;
+    
+    if (category == 'All') {
+      _posts = await _storageService.getPosts();
+    } else {
+      _posts = await _storageService.getPostsByCategory(category);
+    }
+    
     notifyListeners();
   }
 }
