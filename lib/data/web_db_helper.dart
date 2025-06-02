@@ -91,4 +91,16 @@ class DatabaseHelper {
     _postsData.removeWhere((map) => map['id'] == id);
     return initialLength - _postsData.length; // Return number of items removed
   }
+  
+  Future<int> updatePost(BlogPost post) async {
+    developer.log('Updating post in web storage: ${post.title}');
+    final index = _postsData.indexWhere((map) => map['id'] == post.id);
+    if (index != -1) {
+      _postsData[index] = post.toMap();
+      developer.log('Post updated successfully. Current posts: ${jsonEncode(_postsData)}');
+      return 1; // Success
+    }
+    developer.log('Post not found for update');
+    return 0; // Not found
+  }
 }

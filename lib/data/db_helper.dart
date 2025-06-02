@@ -88,4 +88,14 @@ class DatabaseHelper {
     final db = await instance.database;
     return await db.delete('posts', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<int> updatePost(BlogPost post) async {
+    final db = await instance.database;
+    return await db.update(
+      'posts',
+      post.toMap(),
+      where: 'id = ?',
+      whereArgs: [post.id],
+    );
+  }
 }

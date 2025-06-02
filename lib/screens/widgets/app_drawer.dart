@@ -29,7 +29,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           Divider(),
-          ...['Technology', 'Science', 'Art', 'Travel', 'Food'].map((category) {
+          ...['Technology', 'Science', 'Art', 'Travel', 'Life'].map((category) {
             return ListTile(
               title: Text(category),
               onTap: () {

@@ -27,7 +27,7 @@ class ConfirmationDialog extends StatelessWidget {
             onConfirm();
             Navigator.pop(context);
           },
-          child: Text('Confirm', style: TextStyle(color: Colors.red)),
+          child: Text('Confirm', style: TextStyle(color: Colors.green)),
         ),
       ],
     );

@@ -9,6 +9,7 @@ abstract class StorageService {
   Future<List<BlogPost>> getPosts();
   Future<List<BlogPost>> getPostsByCategory(String category);
   Future<int> insertPost(BlogPost post);
+  Future<int> updatePost(BlogPost post);
   Future<int> deletePost(String id);
 
   // Factory constructor to return the appropriate implementation
@@ -48,6 +49,16 @@ class WebStorageService implements StorageService {
     _posts.removeWhere((post) => post.id == id);
     return initialLength - _posts.length; // Return number of deleted items
   }
+
+  @override
+  Future<int> updatePost(BlogPost post) async {
+    final index = _posts.indexWhere((p) => p.id == post.id);
+    if (index != -1) {
+      _posts[index] = post;
+      return 1; // Success
+    }
+    return 0; // Not found
+  }
 }
 
 // SQLite implementation for non-web platforms
@@ -76,6 +87,12 @@ class SqliteStorageService implements StorageService {
   Future<int> deletePost(String id) async {
     final dbHelper = await _getDbHelper();
     return dbHelper.deletePost(id);
+  }
+
+  @override
+  Future<int> updatePost(BlogPost post) async {
+    final dbHelper = await _getDbHelper();
+    return dbHelper.updatePost(post);
   }
 
   // Get the database helper instance

@@ -17,6 +17,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
   @override
   void initState() {
     super.initState();
@@ -26,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _refreshPosts();
     });
   }
-  
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Refresh posts when the app comes to the foreground
@@ -38,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -54,12 +57,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Force reload all posts from storage
     postProvider.loadPosts().then((_) {
       // Check if posts were loaded successfully
-      print('Posts refreshed in HomeScreen: ${postProvider.posts.length} posts available');
+      print(
+        'Posts refreshed in HomeScreen: ${postProvider.posts.length} posts available',
+      );
       // Force UI update if needed
       if (mounted) {
         setState(() {});
       }
     });
+  }
+
+  void _performSearch(String query, PostProvider postProvider) {
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+      });
+      postProvider.clearSearch();
+    } else {
+      setState(() {
+        _isSearching = true;
+      });
+      postProvider.searchPostsByTitle(query);
+    }
   }
 
   @override
@@ -68,20 +87,52 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Consumer<PostProvider>(
       builder: (context, postProvider, child) {
         // Debug print to verify posts are loaded
-        print('HomeScreen build - Available posts: ${postProvider.posts.length}');
-        
+        print(
+          'HomeScreen build - Available posts: ${postProvider.posts.length}',
+        );
+
         return Scaffold(
-          appBar: AppBar(title: Text('Blog Home')),
+          appBar: AppBar(
+            title:
+                _isSearching
+                    ? TextField(
+                      controller: _searchController,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search posts...',
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: InputBorder.none,
+                      ),
+                      autofocus: true,
+                      onChanged: (value) => _performSearch(value, postProvider),
+                    )
+                    : Text('MU Blog'),
+            actions: [
+              IconButton(
+                icon: Icon(_isSearching ? Icons.close : Icons.search),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = !_isSearching;
+                    if (!_isSearching) {
+                      _searchController.clear();
+                      postProvider.clearSearch();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
           drawer: AppDrawer(),
           body: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Recent Posts (${postProvider.posts.length})',
-                  style: Theme.of(context).textTheme.headlineSmall,
+              if (_isSearching)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'Search Results (${postProvider.posts.length})',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
                 ),
-              ),
               // If there are no posts, show a simple message
               if (postProvider.posts.isEmpty)
                 Expanded(
@@ -89,11 +140,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.article_outlined, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.article_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                         SizedBox(height: 16),
                         Text('No posts yet', style: TextStyle(fontSize: 18)),
                         SizedBox(height: 8),
-                        Text('Add your first post with the + button', style: TextStyle(color: Colors.grey)),
+                        Text(
+                          'Add your first post with the + button',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
@@ -108,60 +166,87 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       return Card(
                         margin: EdgeInsets.all(8.0),
                         child: InkWell(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => PostDetailScreen(post: post)),
-                          ),
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PostDetailScreen(post: post),
+                                ),
+                              ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Show image if available
                               if (post.imageUrl.isNotEmpty)
-                                Container(
+                                SizedBox(
                                   height: 120,
                                   width: double.infinity,
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                                    child: kIsWeb
-                                      ? Image.network(post.imageUrl, fit: BoxFit.cover)
-                                      : Image.file(
-                                          File(post.imageUrl),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              color: Colors.grey.shade200,
-                                              child: Icon(Icons.image_not_supported, color: Colors.grey),
-                                            );
-                                          },
-                                        ),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(4),
+                                    ),
+                                    child:
+                                        kIsWeb
+                                            ? Image.network(
+                                              post.imageUrl,
+                                              fit: BoxFit.cover,
+                                            )
+                                            : Image.file(
+                                              File(post.imageUrl),
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) {
+                                                return Container(
+                                                  color: Colors.grey.shade200,
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: Colors.grey,
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                   ),
                                 ),
-                              
+
                               Padding(
                                 padding: EdgeInsets.all(12.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             post.title,
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Chip(label: Text(post.category, style: TextStyle(fontSize: 12))),
+                                        Chip(
+                                          label: Text(
+                                            post.category,
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     SizedBox(height: 8),
                                     Text(
-                                      post.content.length > 100 
-                                        ? '${post.content.substring(0, 100)}...' 
-                                        : post.content,
-                                      style: TextStyle(color: Colors.grey.shade700),
+                                      post.content.length > 100
+                                          ? '${post.content.substring(0, 100)}...'
+                                          : post.content,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                      ),
                                       maxLines: 3,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -184,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 context,
                 MaterialPageRoute(builder: (_) => AddPostScreen()),
               );
-              
+
               // Force refresh posts when returning from add post screen
               setState(() {});
               _refreshPosts();
