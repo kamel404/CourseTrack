@@ -51,7 +51,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [colorScheme.primary.withOpacity(0.05), Colors.white],
+            colors: [colorScheme.primary, Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -77,9 +77,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     controller: _titleController,
                     decoration: InputDecoration(
                       hintText: 'Enter an engaging title',
-                      hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                      hintStyle: TextStyle(color: colorScheme.onSurface),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -178,9 +176,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     controller: _contentController,
                     decoration: InputDecoration(
                       hintText: 'Write your blog post here...',
-                      hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                      hintStyle: TextStyle(color: colorScheme.onSurface),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -222,7 +218,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                       border: Border.all(color: Colors.grey.shade300),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black,
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -418,10 +414,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
           _selectedImage = pickedImage;
           _imageUrl = pickedImage.path; // Store the path for database
         });
-        print('Image selected: ${pickedImage.path}');
       }
     } catch (e) {
-      print('Error picking image: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
@@ -461,9 +455,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     listen: false,
                   ).addPost(newPost);
 
-                  // Print to debug
-                  print('Post added successfully: ${newPost.title}');
-
                   // Close the dialog
                   Navigator.pop(ctx);
 
@@ -478,7 +469,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     listen: false,
                   );
                   await provider.loadPosts();
-                  print('Posts reloaded, count: ${provider.posts.length}');
 
                   // Use a more direct navigation approach
                   if (mounted) {
@@ -488,7 +478,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     ).pushNamedAndRemoveUntil('/home', (route) => false);
                   }
                 } catch (e) {
-                  print('Error adding post: $e');
                   // Close the dialog
                   Navigator.pop(ctx);
 

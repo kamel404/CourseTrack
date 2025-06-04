@@ -69,7 +69,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [colorScheme.primary.withOpacity(0.05), Colors.white],
+            colors: [colorScheme.primary, Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -95,9 +95,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
                     controller: _titleController,
                     decoration: InputDecoration(
                       hintText: 'Enter an engaging title',
-                      hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                      hintStyle: TextStyle(color: colorScheme.onSurface),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -196,9 +194,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
                     controller: _contentController,
                     decoration: InputDecoration(
                       hintText: 'Write your blog post here...',
-                      hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                      hintStyle: TextStyle(color: colorScheme.onSurface),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -240,7 +236,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
                       border: Border.all(color: Colors.grey.shade300),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black,
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

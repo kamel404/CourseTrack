@@ -43,7 +43,7 @@ class PostDetailScreen extends StatelessWidget {
                   builder: (context) => EditPostScreen(post: post),
                 ),
               );
-              
+
               // If we got back an updated post, refresh this screen
               if (updatedPost != null && updatedPost is BlogPost) {
                 // Replace the current route with the updated post
@@ -72,101 +72,101 @@ class PostDetailScreen extends StatelessWidget {
                   height: 300,
                   width: double.infinity,
                   child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // The image
-                    kIsWeb
-                        ? Image.network(post.imageUrl, fit: BoxFit.cover)
-                        : Image.file(
-                          File(post.imageUrl),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: colorScheme.primary,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: colorScheme.onPrimary,
-                                      size: 48,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Image not available',
-                                      style: TextStyle(
+                    fit: StackFit.expand,
+                    children: [
+                      // The image
+                      kIsWeb
+                          ? Image.network(post.imageUrl, fit: BoxFit.cover)
+                          : Image.file(
+                            File(post.imageUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: colorScheme.primary,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported_outlined,
                                         color: colorScheme.onPrimary,
-                                        fontSize: 16,
+                                        size: 48,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Image not available',
+                                        style: TextStyle(
+                                          color: colorScheme.onPrimary,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                    // Gradient overlay for better text visibility
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.7),
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.3),
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                      ),
-                    ),
-                    // Category chip and date
-                    Positioned(
-                      bottom: 20,
-                      left: 20,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Category chip
-                          Chip(
-                            label: Text(
-                              post.category,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            backgroundColor: colorScheme.primary.withOpacity(
-                              0.8,
-                            ),
+                              );
+                            },
                           ),
-                          const SizedBox(height: 8),
-                          // Date with icon
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                DateFormat.yMMMd().format(post.date),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                      // Gradient overlay for better text visibility
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black,
+                              Colors.transparent,
+                              Colors.black,
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      // Category chip and date
+                      Positioned(
+                        bottom: 20,
+                        left: 20,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Category chip
+                            Chip(
+                              label: Text(
+                                post.category,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              backgroundColor: colorScheme.primary.withValues(
+                                alpha: 0.8,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // Date with icon
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  DateFormat.yMMMd().format(post.date),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
+              )
             else
               // Colored header when no image
               Container(
@@ -224,7 +224,7 @@ class PostDetailScreen extends StatelessWidget {
                         : null,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black,
                     offset: const Offset(0, 2),
                     blurRadius: 8,
                   ),
@@ -341,69 +341,77 @@ class PostDetailScreen extends StatelessWidget {
   void _showFullScreenImage(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Image container
-            InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 4,
-              child: kIsWeb
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                    height: MediaQuery.of(context).size.height,
-                  )
-                : Image.file(
-                    File(imageUrl),
-                    fit: BoxFit.contain,
-                    height: MediaQuery.of(context).size.height,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Theme.of(context).colorScheme.error,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image_not_supported_outlined,
-                                color: Theme.of(context).colorScheme.onError,
-                                size: 48,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Image not available',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onError,
-                                  fontSize: 16,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Image container
+                InteractiveViewer(
+                  panEnabled: true,
+                  minScale: 0.5,
+                  maxScale: 4,
+                  child:
+                      kIsWeb
+                          ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.contain,
+                            height: MediaQuery.of(context).size.height,
+                          )
+                          : Image.file(
+                            File(imageUrl),
+                            fit: BoxFit.contain,
+                            height: MediaQuery.of(context).size.height,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Theme.of(context).colorScheme.error,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onError,
+                                        size: 48,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Image not available',
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onError,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
-                        ),
-                      );
-                    },
-                  ),
-            ),
-            // Close button
-            Positioned(
-              top: 10,
-              right: 10,
-              child: CircleAvatar(
-                backgroundColor: Colors.black54,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
+                // Close button
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 

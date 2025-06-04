@@ -12,7 +12,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize database factory before any database operations
-  // This is crucial for resolving the error
   initializeDatabaseFactory();
 
   if (!kIsWeb) {
@@ -20,10 +19,8 @@ void main() async {
       // Pre-initialize the database for non-web platforms
       final dbHelper = DatabaseHelper.instance;
       await dbHelper.database;
-      print('Database successfully initialized');
-    } catch (e) {
-      print('Database initialization error: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   runApp(MyApp());

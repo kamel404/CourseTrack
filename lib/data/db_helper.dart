@@ -37,7 +37,6 @@ class DatabaseHelper {
       _database = await _initDB('blog.db');
       return _database!;
     } catch (e) {
-      print('Error initializing database: $e');
       rethrow;
     }
   }

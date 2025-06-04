@@ -52,14 +52,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _refreshPosts() {
-    print('Refreshing posts in HomeScreen');
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     // Force reload all posts from storage
     postProvider.loadPosts().then((_) {
       // Check if posts were loaded successfully
-      print(
-        'Posts refreshed in HomeScreen: ${postProvider.posts.length} posts available',
-      );
       // Force UI update if needed
       if (mounted) {
         setState(() {});
@@ -87,9 +83,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Consumer<PostProvider>(
       builder: (context, postProvider, child) {
         // Debug print to verify posts are loaded
-        print(
-          'HomeScreen build - Available posts: ${postProvider.posts.length}',
-        );
 
         return Scaffold(
           appBar: AppBar(
@@ -273,7 +266,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               // Force refresh posts when returning from add post screen
               setState(() {});
               _refreshPosts();
-              print('Returned from add post screen, refreshing posts');
             },
             child: Icon(Icons.add),
           ),

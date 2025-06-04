@@ -18,10 +18,8 @@ class PostProvider with ChangeNotifier {
     try {
       _posts = await _storageService.getPosts();
       _allPosts = List.from(_posts); // Keep a copy of all posts for search
-      print('Loaded ${_posts.length} posts from storage');
       notifyListeners();
     } catch (e) {
-      print('Error loading posts: $e');
       // Make sure we always have a valid list even if there's an error
       _posts = _posts.isEmpty ? [] : _posts;
       _allPosts = List.from(_posts);
@@ -33,17 +31,9 @@ class PostProvider with ChangeNotifier {
     try {
       // First insert the post into storage
       await _storageService.insertPost(post);
-      
-      // Print debug info
-      print('Added post to storage: ${post.title}');
-      
       // Reload posts from storage to get a fresh list
-      // This is more reliable than manually adding to the list
       await loadPosts();
-      
-      print('After adding, total posts: ${_posts.length}');
     } catch (e) {
-      print('Error in addPost: $e');
       rethrow;
     }
   }
@@ -57,14 +47,10 @@ class PostProvider with ChangeNotifier {
     try {
       // Update the post in storage
       await _storageService.updatePost(post);
-      
-      // Print debug info
-      print('Updated post in storage: ${post.title}');
-      
+
       // Reload posts from storage to get a fresh list
       await loadPosts();
     } catch (e) {
-      print('Error in updatePost: $e');
       rethrow;
     }
   }
@@ -72,7 +58,7 @@ class PostProvider with ChangeNotifier {
   Future<void> setCategory(String category) async {
     _currentCategory = category;
     _isSearchActive = false;
-    
+
     if (category == 'All') {
       _posts = await _storageService.getPosts();
       _allPosts = List.from(_posts);
@@ -80,27 +66,28 @@ class PostProvider with ChangeNotifier {
       _posts = await _storageService.getPostsByCategory(category);
       _allPosts = List.from(_posts);
     }
-    
+
     notifyListeners();
   }
-  
+
   // Search posts by title
   void searchPostsByTitle(String query) {
     if (query.isEmpty) {
       clearSearch();
       return;
     }
-    
+
     _isSearchActive = true;
     final lowercaseQuery = query.toLowerCase();
-    
-    _posts = _allPosts.where((post) {
-      return post.title.toLowerCase().contains(lowercaseQuery);
-    }).toList();
-    
+
+    _posts =
+        _allPosts.where((post) {
+          return post.title.toLowerCase().contains(lowercaseQuery);
+        }).toList();
+
     notifyListeners();
   }
-  
+
   // Clear search and restore original posts
   void clearSearch() {
     if (_isSearchActive) {
